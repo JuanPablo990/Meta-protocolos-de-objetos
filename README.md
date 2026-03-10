@@ -38,25 +38,37 @@ Sigue estos pasos para compilar y probar la aplicación en tu entorno de desarro
 
 Verás una salida en consola indicando que se han cargado los componentes y que el servidor de *MicroSpringBoot* ha iniciado exitosamente en el puerto `8080`.
 
-## Guía de Uso Rápida
+## Guía de Uso Rápida y Evidencias
 
-Con el servidor encendido, ingresa a tu navegador web o utiliza herramientas de terminal como `curl` para solicitar las respuestas de los controladores de prueba predeterminados:
+A continuación, se presentan las pruebas de ejecución locales y en la nube (AWS), demostrando el correcto funcionamiento del Framework IoC y el Servidor HTTP estático:
 
-- **Retorno String básico:**
-  Navega hacia `http://localhost:8080/hello`
-  > Retornará: `Greetings from Spring Boot!`
+### 1. Despliegue en Amazon Web Services (AWS)
 
-- **Uso de Parámetros URI (Inyección Query String):**
-  Navega hacia `http://localhost:8080/greeting?name=PruebaLocal`
-  > Retornará: `Hola PruebaLocal`
+![img.png](img.png)
 
-- **Uso de Valores por Defecto:**
-  Navega hacia `http://localhost:8080/greeting` sin parámetros
-  > Retornará el default value de la anotación: `Hola World`
+**Análisis de la arquitectura en la nube:**
+Para este hito, el servidor `MicroSpringBoot` fue empaquetado y subido a una instancia híbrida de EC2 en Amazon Web Services. Se evidenció que la API de reflection de Java compilada nativamente operó sin problemas bajo un entorno Linux remoto. Las reglas de entrada del Security Group fueron configuradas para permitir tráfico TCP por el puerto 8080, logrando un despliegue exitoso accesible mediante la IP pública proveída por Amazon.
 
-- **Visualización de Archivos Estáticos:**
-  Navega hacia `http://localhost:8080/index.html`
-  > Entregará la página web ubicada dentro de `resources/public`.
+### 2. Prueba de Mapeo Básico (@GetMapping)
+
+![img_1.png](img_1.png)
+
+**Análisis de Inversión de Control:**
+Al iniciar el servidor, el Component Scanner recorrió el *classpath* encontrando la clase `HelloController` anotada con `@RestController`. Haciendo uso reflexivo de `Class.forName()` y `Method.invoke()`, la solicitud HTTP de tipo `GET` entrante por el socket fue redirigida a la función `index()`, y el resultado en formato `String` fue empaquetado correctamente en una respuesta HTTP `200 OK` legible por el navegador.
+
+### 3. Prueba de Inyección de Parámetros (@RequestParam)
+
+![img_2.png](img_2.png)
+
+**Análisis del Query String:**
+La plataforma IoC implementada fue probada con inyección por query. Al detectar la anotación `@RequestParam`, el framework extrae variables y valores de la solicitud HTTP sin procesar ("`?name=Profesor`") inyectándolos dinámicamente en los parámetros de tipo `String` del método `greeting`.
+
+### 4. Prueba de Servidor de Archivos Estáticos y Multimedia
+
+![img_3.png](img_3.png)
+
+**Análisis sobre entrega asíncrona de recursos:**
+Para corroborar que el framework funcionaba verdaderamente como un Servidor Web tipo Apache (y no solo como backend REST), se configuró una ruta de búsqueda en `src/main/resources/public`. Al solicitar un recurso que no hace match con ninguna ruta anotada (por ejemplo `/logo.png`), el despachador de sockets procede a leer en formato asíncrono los Bytes del PNG/HTML desde el disco, componiendo el MIME Type correcto (`image/png` / `text/html`) asegurando que el navegador reciba e interpole visualmente los recursos estáticos.
 
 ## Construido Con
 
